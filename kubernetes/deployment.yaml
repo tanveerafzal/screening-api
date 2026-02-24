@@ -1,0 +1,175 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: screening
+  labels:
+    app.kubernetes.io/name: screening-api
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: screening-api-secrets
+  namespace: screening
+type: Opaque
+stringData:
+  # Only needed if using hosted OpenSanctions API
+  OPENSANCTIONS_API_KEY: "your-api-key-here"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: screening-api-config
+  namespace: screening
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  SCREENING_BACKEND: "yente"
+  # Point to yente service in opensanctions namespace
+  YENTE_BASE_URL: "http://yente.opensanctions.svc.cluster.local:8000"
+  OPENSANCTIONS_API_URL: "https://api.opensanctions.org"
+  REQUEST_TIMEOUT_MS: "30000"
+  MAX_BATCH_SIZE: "50"
+  RATE_LIMIT_WINDOW_MS: "60000"
+  RATE_LIMIT_MAX_REQUESTS: "100"
+  LOG_LEVEL: "info"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: screening-api
+  namespace: screening
+  labels:
+    app.kubernetes.io/name: screening-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: screening-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: screening-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+        - name: screening-api
+          # Update with your container registry
+          image: gcr.io/trustcredo/screening-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          envFrom:
+            - configMapRef:
+                name: screening-api-config
+            - secretRef:
+                name: screening-api-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 5
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: screening-api
+                topologyKey: kubernetes.io/hostname
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: screening-api
+  namespace: screening
+  labels:
+    app.kubernetes.io/name: screening-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: screening-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: screening-api-pdb
+  namespace: screening
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: screening-api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: screening-api-hpa
+  namespace: screening
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: screening-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: screening-api-ingress
+  namespace: screening
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "screening-api-ip"
+spec:
+  rules:
+    - host: screening-api.your-domain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: screening-api
+                port:
+                  number: 80

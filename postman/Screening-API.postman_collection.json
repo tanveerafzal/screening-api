@@ -1,0 +1,852 @@
+{
+  "info": {
+    "name": "Screening API",
+    "description": "Sanctions screening API wrapper for OpenSanctions. Supports matching entities against watchlists, searching sanctions lists, and retrieving entity details.\n\n## Backends\n- **yente** - Self-hosted OpenSanctions instance\n- **hosted** - OpenSanctions hosted API (requires API key)\n\n## Configuration\nSet the `baseUrl` variable to point to your running instance (default: http://localhost:3000).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "dataset",
+      "value": "default",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "description": "Health checks and service information endpoints.",
+      "item": [
+        {
+          "name": "Health Check (Liveness)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/healthz",
+              "host": ["{{baseUrl}}"],
+              "path": ["healthz"]
+            },
+            "description": "Basic liveness probe. Returns 200 if the service is running."
+          }
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/readyz",
+              "host": ["{{baseUrl}}"],
+              "path": ["readyz"]
+            },
+            "description": "Readiness probe. Returns 200 if the backend index is ready to serve requests."
+          }
+        },
+        {
+          "name": "Service Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["info"]
+            },
+            "description": "Returns service metadata including version, backend type, and backend URL."
+          }
+        },
+        {
+          "name": "Catalog (List Datasets)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/catalog",
+              "host": ["{{baseUrl}}"],
+              "path": ["catalog"]
+            },
+            "description": "Lists all available datasets with entity counts, last change timestamps, and metadata."
+          }
+        },
+        {
+          "name": "List Algorithms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/algorithms",
+              "host": ["{{baseUrl}}"],
+              "path": ["algorithms"]
+            },
+            "description": "Lists available matching/scoring algorithms and indicates the default algorithm."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Match",
+      "description": "Match entities against sanctions watchlists. Supports batch queries with up to 50 entities per request.",
+      "item": [
+        {
+          "name": "Match - Single Person",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"q1\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"Vladimir Putin\"],\n        \"birthDate\": [\"1952\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=5&threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Max results per query (default: 5, max: 500)"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.7",
+                  "description": "Minimum score threshold 0-1 (default: 0.7)"
+                },
+                {
+                  "key": "algorithm",
+                  "value": "best",
+                  "description": "Scoring algorithm (default: best)",
+                  "disabled": true
+                },
+                {
+                  "key": "topics",
+                  "value": "sanction",
+                  "description": "Filter by topics: sanction, crime, pep",
+                  "disabled": true
+                },
+                {
+                  "key": "include_dataset",
+                  "value": "",
+                  "description": "Include specific datasets",
+                  "disabled": true
+                },
+                {
+                  "key": "exclude_dataset",
+                  "value": "",
+                  "description": "Exclude specific datasets",
+                  "disabled": true
+                },
+                {
+                  "key": "exclude_schema",
+                  "value": "",
+                  "description": "Exclude entity schemas",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Match a single person entity against sanctions watchlists by name and date of birth."
+          }
+        },
+        {
+          "name": "Match - Person with Full Details",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"q1\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"John Smith\"],\n        \"firstName\": [\"John\"],\n        \"lastName\": [\"Smith\"],\n        \"birthDate\": [\"1980-01-15\"],\n        \"nationality\": [\"US\"],\n        \"country\": [\"US\"],\n        \"gender\": [\"male\"],\n        \"idNumber\": [\"123456789\"],\n        \"address\": [\"123 Main St, New York, NY\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=10&threshold=0.5",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.5"
+                }
+              ]
+            },
+            "description": "Match a person with comprehensive details including name, DOB, nationality, ID number, and address."
+          }
+        },
+        {
+          "name": "Match - Single Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"company1\": {\n      \"schema\": \"Company\",\n      \"properties\": {\n        \"name\": [\"Gazprom\"],\n        \"jurisdiction\": [\"Russia\"],\n        \"country\": [\"RU\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=5&threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                }
+              ]
+            },
+            "description": "Match a company entity against sanctions watchlists by name and jurisdiction."
+          }
+        },
+        {
+          "name": "Match - Organization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"org1\": {\n      \"schema\": \"Organization\",\n      \"properties\": {\n        \"name\": [\"Hezbollah\"],\n        \"country\": [\"LB\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=5&threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                }
+              ]
+            },
+            "description": "Match an organization entity against sanctions watchlists."
+          }
+        },
+        {
+          "name": "Match - Vessel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"vessel1\": {\n      \"schema\": \"Vessel\",\n      \"properties\": {\n        \"name\": [\"Lady M\"],\n        \"imoNumber\": [\"1012531\"],\n        \"flag\": [\"RU\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=5&threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                }
+              ]
+            },
+            "description": "Match a vessel entity by name, IMO number, and flag."
+          }
+        },
+        {
+          "name": "Match - Aircraft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"aircraft1\": {\n      \"schema\": \"Aircraft\",\n      \"properties\": {\n        \"name\": [\"Boeing 737\"],\n        \"country\": [\"RU\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=5&threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                }
+              ]
+            },
+            "description": "Match an aircraft entity against sanctions watchlists."
+          }
+        },
+        {
+          "name": "Match - Crypto Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"wallet1\": {\n      \"schema\": \"CryptoWallet\",\n      \"properties\": {\n        \"publicKey\": [\"1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa\"],\n        \"currency\": [\"BTC\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=5&threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                }
+              ]
+            },
+            "description": "Match a crypto wallet address against sanctions watchlists."
+          }
+        },
+        {
+          "name": "Match - Batch (Multiple Entities)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"person1\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"Vladimir Putin\"],\n        \"birthDate\": [\"1952\"]\n      }\n    },\n    \"person2\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"Ali Khamenei\"],\n        \"nationality\": [\"IR\"]\n      }\n    },\n    \"company1\": {\n      \"schema\": \"Company\",\n      \"properties\": {\n        \"name\": [\"Gazprom\"],\n        \"jurisdiction\": [\"Russia\"]\n      }\n    },\n    \"org1\": {\n      \"schema\": \"Organization\",\n      \"properties\": {\n        \"name\": [\"Wagner Group\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=5&threshold=0.7",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                }
+              ]
+            },
+            "description": "Batch match multiple entities in a single request. Supports up to 50 queries per request (configurable via MAX_BATCH_SIZE)."
+          }
+        },
+        {
+          "name": "Match - Filter by Topics (PEP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"q1\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"Vladimir Putin\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=10&threshold=0.5&topics=role.pep",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.5"
+                },
+                {
+                  "key": "topics",
+                  "value": "role.pep",
+                  "description": "Filter results to Politically Exposed Persons only"
+                }
+              ]
+            },
+            "description": "Match with topic filtering to find only Politically Exposed Persons (PEP)."
+          }
+        },
+        {
+          "name": "Match - Filter by Topics (Sanctions)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"q1\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"Vladimir Putin\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/match/{{dataset}}?limit=10&threshold=0.5&topics=sanction",
+              "host": ["{{baseUrl}}"],
+              "path": ["match", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "threshold",
+                  "value": "0.5"
+                },
+                {
+                  "key": "topics",
+                  "value": "sanction",
+                  "description": "Filter results to sanctioned entities only"
+                }
+              ]
+            },
+            "description": "Match with topic filtering to find only sanctioned entities."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "description": "Search for entities in sanctions lists with text queries and optional filters.",
+      "item": [
+        {
+          "name": "Search - Basic Query",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=putin",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "putin",
+                  "description": "Search query term (required)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Max results (default: 10, max: 500)",
+                  "disabled": true
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Pagination offset (default: 0)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Basic text search across all entity types in the given dataset."
+          }
+        },
+        {
+          "name": "Search - Filter by Schema (Person)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=putin&schema=Person&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "putin"
+                },
+                {
+                  "key": "schema",
+                  "value": "Person",
+                  "description": "Filter by entity type: Person, Company, Organization, LegalEntity, Vessel, Aircraft, CryptoWallet"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search filtered to Person entities only."
+          }
+        },
+        {
+          "name": "Search - Filter by Schema (Company)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=gazprom&schema=Company&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "gazprom"
+                },
+                {
+                  "key": "schema",
+                  "value": "Company"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search filtered to Company entities only."
+          }
+        },
+        {
+          "name": "Search - With Country Filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=bank&countries=IR&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "bank"
+                },
+                {
+                  "key": "countries",
+                  "value": "IR",
+                  "description": "ISO country code filter"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search with country code filter (ISO 2-letter codes)."
+          }
+        },
+        {
+          "name": "Search - With Topic Filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=president&topics=role.pep&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "president"
+                },
+                {
+                  "key": "topics",
+                  "value": "role.pep",
+                  "description": "Topic filter: sanction, crime, role.pep"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search filtered by topic (e.g., PEP - Politically Exposed Persons)."
+          }
+        },
+        {
+          "name": "Search - Fuzzy Matching",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=vladmir putn&fuzzy=true&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "vladmir putn",
+                  "description": "Intentional misspelling to test fuzzy matching"
+                },
+                {
+                  "key": "fuzzy",
+                  "value": "true",
+                  "description": "Enable fuzzy matching for typo tolerance"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search with fuzzy matching enabled - tolerates misspellings and typos."
+          }
+        },
+        {
+          "name": "Search - Paginated Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=russia&limit=5&offset=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "russia"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "offset",
+                  "value": "10",
+                  "description": "Skip first 10 results (page 3 with limit=5)"
+                }
+              ]
+            },
+            "description": "Paginated search results using limit and offset."
+          }
+        },
+        {
+          "name": "Search - Multiple Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search/{{dataset}}?q=oil&schema=Company&countries=RU&topics=sanction&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "oil"
+                },
+                {
+                  "key": "schema",
+                  "value": "Company"
+                },
+                {
+                  "key": "countries",
+                  "value": "RU"
+                },
+                {
+                  "key": "topics",
+                  "value": "sanction"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Search with multiple filters combined: schema, country, and topic."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Screen",
+      "description": "Smart screening endpoint that categorizes matches by risk level and returns a verdict (CLEAR, FLAG, REVIEW).\n\nCategories: SANCTIONED (critical), TERRORISM (critical), WANTED (critical), FRAUD (high), CRIME (high), TRAFFICKING (high), PEP (medium), DEBARMENT (medium), POI (low), PEP_ASSOCIATE (low).",
+      "item": [
+        {
+          "name": "Screen - Single Person",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"q1\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"Vladimir Putin\"],\n        \"birthDate\": [\"1952\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/screen/{{dataset}}?threshold=0.7&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["screen", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "threshold",
+                  "value": "0.7",
+                  "description": "Minimum score threshold 0-1 (default: 0.7)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Max results per query (default: 10)"
+                }
+              ]
+            },
+            "description": "Screen a single person and get a categorized verdict with risk levels. Returns CLEAR, FLAG, or REVIEW."
+          }
+        },
+        {
+          "name": "Screen - Single Company",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"company1\": {\n      \"schema\": \"Company\",\n      \"properties\": {\n        \"name\": [\"Gazprom\"],\n        \"jurisdiction\": [\"Russia\"],\n        \"country\": [\"RU\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/screen/{{dataset}}?threshold=0.7&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["screen", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Screen a company entity and get a categorized verdict with risk levels."
+          }
+        },
+        {
+          "name": "Screen - Batch (Multiple Entities)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"queries\": {\n    \"person1\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"Vladimir Putin\"],\n        \"birthDate\": [\"1952\"]\n      }\n    },\n    \"person2\": {\n      \"schema\": \"Person\",\n      \"properties\": {\n        \"name\": [\"John Smith\"],\n        \"birthDate\": [\"1980-01-15\"],\n        \"nationality\": [\"US\"]\n      }\n    },\n    \"company1\": {\n      \"schema\": \"Company\",\n      \"properties\": {\n        \"name\": [\"Gazprom\"],\n        \"jurisdiction\": [\"Russia\"]\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/screen/{{dataset}}?threshold=0.7&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["screen", "{{dataset}}"],
+              "query": [
+                {
+                  "key": "threshold",
+                  "value": "0.7"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Batch screen multiple entities. Returns per-entity verdicts and an overall summary with counts of flagged, review, and clear results."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entities",
+      "description": "Retrieve specific entity details by ID.",
+      "item": [
+        {
+          "name": "Get Entity by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/entities/Q7747",
+              "host": ["{{baseUrl}}"],
+              "path": ["entities", "Q7747"],
+              "query": [
+                {
+                  "key": "nested",
+                  "value": "true",
+                  "description": "Include nested entity relationships (default: true)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Retrieve a specific entity by its ID (e.g., Q7747 for Vladimir Putin). Returns full entity details including properties, datasets, and timestamps."
+          }
+        },
+        {
+          "name": "Get Entity by ID (Without Nested)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/entities/Q7747?nested=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["entities", "Q7747"],
+              "query": [
+                {
+                  "key": "nested",
+                  "value": "false",
+                  "description": "Exclude nested entity relationships"
+                }
+              ]
+            },
+            "description": "Retrieve an entity without nested/related entities - returns a flatter response."
+          }
+        }
+      ]
+    }
+  ]
+}

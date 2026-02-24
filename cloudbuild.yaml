@@ -1,0 +1,59 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+      - '.'
+
+  # Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--port'
+      - '3000'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--timeout'
+      - '60s'
+      - '--concurrency'
+      - '80'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,SCREENING_BACKEND=${_SCREENING_BACKEND}'
+      - '--set-secrets'
+      - 'DATABASE_URL=screening-database-url:latest,DIRECT_URL=screening-direct-url:latest,OPENSANCTIONS_API_KEY=screening-opensanctions-key:latest,COVE_WEBHOOK_URL=screening-cove-webhook-url:latest,COVE_WEBHOOK_API_KEY=screening-cove-webhook-key:latest'
+      - '--allow-unauthenticated'
+
+substitutions:
+  _SERVICE_NAME: screening-api
+  _REGION: us-central1
+  _REPOSITORY: screening
+  _SCREENING_BACKEND: hosted
+
+options:
+  logging: CLOUD_LOGGING_ONLY
