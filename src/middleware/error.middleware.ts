@@ -11,12 +11,12 @@ export function errorHandler(
   console.error('Error:', err);
 
   // Check if it's our API error
-  if ('status' in err && typeof err.status === 'number') {
+  if ('status' in err && typeof (err as ApiError).status === 'number') {
     const apiError = err as ApiError;
     res.status(apiError.status).json({
       error: apiError.message,
       detail: apiError.detail,
-      ...(config.nodeEnv === 'development' && { stack: (err as Error).stack }),
+      ...(config.nodeEnv === 'development' && { stack: apiError.stack }),
     });
     return;
   }
@@ -25,8 +25,8 @@ export function errorHandler(
   res.status(500).json({
     error: 'Internal server error',
     ...(config.nodeEnv === 'development' && {
-      message: err.message,
-      stack: err.stack,
+      message: (err as Error).message,
+      stack: (err as Error).stack,
     }),
   });
 }

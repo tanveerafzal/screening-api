@@ -225,6 +225,7 @@ export interface ApiError {
   status: number;
   message: string;
   detail?: string;
+  stack?: string;
 }
 
 // Screening types

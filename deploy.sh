@@ -12,7 +12,7 @@ set -euo pipefail
 
 # Defaults (override via flags or environment variables)
 PROJECT_ID="${GCP_PROJECT_ID:-trustcredo}"
-REGION="${GCP_REGION:-us-central1}"
+REGION="${GCP_REGION:-northamerica-northeast2}"
 SERVICE_NAME="screening-api"
 REPOSITORY="screening"
 SCREENING_BACKEND="${SCREENING_BACKEND:-hosted}"

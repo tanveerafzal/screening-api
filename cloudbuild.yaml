@@ -51,7 +51,7 @@ steps:
 
 substitutions:
   _SERVICE_NAME: screening-api
-  _REGION: us-central1
+  _REGION: northamerica-northeast2
   _REPOSITORY: screening
   _SCREENING_BACKEND: hosted
 
