@@ -44,9 +44,9 @@ steps:
       - '--concurrency'
       - '80'
       - '--set-env-vars'
-      - 'NODE_ENV=production,SCREENING_BACKEND=${_SCREENING_BACKEND}'
+      - 'NODE_ENV=production,SCREENING_BACKEND=${_SCREENING_BACKEND},API_KEY=${_API_KEY}'
       - '--set-secrets'
-      - 'API_KEY=screening-api-key:latest,OPENSANCTIONS_API_KEY=screening-opensanctions-key:latest,COVE_WEBHOOK_URL=screening-cove-webhook-url:latest,COVE_WEBHOOK_API_KEY=screening-cove-webhook-key:latest'
+      - 'OPENSANCTIONS_API_KEY=screening-opensanctions-key:latest,COVE_WEBHOOK_URL=screening-cove-webhook-url:latest,COVE_WEBHOOK_API_KEY=screening-cove-webhook-key:latest'
       - '--allow-unauthenticated'
 
 substitutions:
@@ -54,6 +54,7 @@ substitutions:
   _REGION: northamerica-northeast2
   _REPOSITORY: screening
   _SCREENING_BACKEND: hosted
+  _API_KEY: ''
 
 options:
   logging: CLOUD_LOGGING_ONLY
