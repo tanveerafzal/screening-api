@@ -46,7 +46,7 @@ steps:
       - '--set-env-vars'
       - 'NODE_ENV=production,SCREENING_BACKEND=${_SCREENING_BACKEND}'
       - '--set-secrets'
-      - 'DATABASE_URL=screening-database-url:latest,DIRECT_URL=screening-direct-url:latest,OPENSANCTIONS_API_KEY=screening-opensanctions-key:latest,COVE_WEBHOOK_URL=screening-cove-webhook-url:latest,COVE_WEBHOOK_API_KEY=screening-cove-webhook-key:latest'
+      - 'API_KEY=screening-api-key:latest,OPENSANCTIONS_API_KEY=screening-opensanctions-key:latest,COVE_WEBHOOK_URL=screening-cove-webhook-url:latest,COVE_WEBHOOK_API_KEY=screening-cove-webhook-key:latest'
       - '--allow-unauthenticated'
 
 substitutions:

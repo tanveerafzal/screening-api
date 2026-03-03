@@ -7,9 +7,8 @@ const configSchema = z.object({
   port: z.coerce.number().default(3000),
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
 
-  // Database (Prisma reads DATABASE_URL directly; these are for fail-fast validation)
-  databaseUrl: z.string(),
-  directUrl: z.string().optional(),
+  // API key for authenticating incoming requests
+  apiKey: z.string(),
 
   // Backend selection
   screeningBackend: z.enum(['yente', 'hosted']).default('yente'),
@@ -43,8 +42,7 @@ const configSchema = z.object({
 const configInput = {
   port: process.env['PORT'],
   nodeEnv: process.env['NODE_ENV'],
-  databaseUrl: process.env['DATABASE_URL'],
-  directUrl: process.env['DIRECT_URL'],
+  apiKey: process.env['API_KEY'],
   screeningBackend: process.env['SCREENING_BACKEND'],
   yenteBaseUrl: process.env['YENTE_BASE_URL'],
   openSanctionsApiUrl: process.env['OPENSANCTIONS_API_URL'],

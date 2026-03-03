@@ -6,8 +6,6 @@ import rateLimit from 'express-rate-limit';
 import { config } from './config/index.js';
 import routes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
-import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js';
-import { prisma } from './lib/prisma.js';
 
 const app = express();
 
@@ -36,9 +34,6 @@ if (config.nodeEnv !== 'test') {
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 
-// Request logging (after body parsing, before routes)
-app.use(requestLoggerMiddleware);
-
 // API routes
 app.use('/', routes);
 
@@ -63,8 +58,7 @@ const server = app.listen(config.port, () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully...');
-  server.close(async () => {
-    await prisma.$disconnect();
+  server.close(() => {
     console.log('Server closed');
     process.exit(0);
   });
@@ -72,8 +66,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully...');
-  server.close(async () => {
-    await prisma.$disconnect();
+  server.close(() => {
     console.log('Server closed');
     process.exit(0);
   });

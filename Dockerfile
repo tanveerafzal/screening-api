@@ -3,21 +3,17 @@ FROM node:22-slim AS builder
 
 WORKDIR /app
 
-# Install OpenSSL (required by Prisma)
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy Prisma schema and source code
-COPY prisma ./prisma/
+# Copy source code
 COPY tsconfig.json ./
 COPY src ./src
 
-# Build TypeScript (includes prisma generate)
+# Build TypeScript
 RUN npm run build
 
 # Production stage
@@ -25,8 +21,8 @@ FROM node:22-slim AS production
 
 WORKDIR /app
 
-# Install OpenSSL (required by Prisma)
-RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
+# Install curl for health checks
+RUN apt-get update -y && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN groupadd -g 1001 nodejs && \
@@ -35,10 +31,6 @@ RUN groupadd -g 1001 nodejs && \
 # Copy package files and install production dependencies
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
-
-# Copy Prisma schema and generate client
-COPY prisma ./prisma/
-RUN npx prisma generate
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist

@@ -1,9 +1,8 @@
-import { Router, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { validate, matchRequestSchema } from '../middleware/validate.middleware.js';
 import { performScreening } from '../utils/screening.utils.js';
 import { coveWebhookService } from '../services/cove-webhook.service.js';
 import { config } from '../config/index.js';
-import type { PartnerRequest } from '../middleware/api-key.middleware.js';
 import type { MatchRequest, MatchOptions } from '../types/index.js';
 
 const router = Router();
@@ -16,7 +15,7 @@ router.post(
   '/cove/:dataset',
   validate(matchRequestSchema),
   async (
-    req: PartnerRequest & {
+    req: Request & {
       params: { dataset: string };
       body: MatchRequest;
       query: { limit?: string; threshold?: string; algorithm?: string };

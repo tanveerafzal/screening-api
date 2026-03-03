@@ -84,7 +84,7 @@ gcloud run deploy "$SERVICE_NAME" \
   --timeout 60s \
   --concurrency 80 \
   --set-env-vars "NODE_ENV=production,SCREENING_BACKEND=${SCREENING_BACKEND}" \
-  --set-secrets "DATABASE_URL=screening-database-url:latest,DIRECT_URL=screening-direct-url:latest,OPENSANCTIONS_API_KEY=screening-opensanctions-key:latest,COVE_WEBHOOK_URL=screening-cove-webhook-url:latest,COVE_WEBHOOK_API_KEY=screening-cove-webhook-key:latest" \
+  --set-secrets "API_KEY=screening-api-key:latest,OPENSANCTIONS_API_KEY=screening-opensanctions-key:latest,COVE_WEBHOOK_URL=screening-cove-webhook-url:latest,COVE_WEBHOOK_API_KEY=screening-cove-webhook-key:latest" \
   --allow-unauthenticated
 
 # Step 4: Show service URL
